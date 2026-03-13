@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: kasasagi-selvhjaelp
+    runtime: node
+    plan: free
+    buildCommand: npm install -g pnpm && pnpm install && pnpm build
+    startCommand: pnpm start -p 10000
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NEXT_PUBLIC_MOCK_API
+        value: "true"
+      - key: PORT
+        value: 10000

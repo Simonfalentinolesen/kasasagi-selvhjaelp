@@ -73,6 +73,31 @@ export default function HomePage() {
         <p className="mt-8 text-center text-xs text-fg-muted">
           Kasasagi is a fully self-service experience. All support is handled through this portal.
         </p>
+
+        {/* Demo/test info — remove before production */}
+        {process.env.NEXT_PUBLIC_MOCK_API === 'true' && (
+          <div className="mt-6 rounded-md border border-dashed border-amber-300 bg-amber-50/50 p-4 text-left">
+            <p className="text-xs font-medium text-amber-800 mb-2">🧪 Test mode — demo data</p>
+            <div className="space-y-2 text-xs text-amber-700">
+              <div>
+                <p className="font-medium">Order lookup:</p>
+                <p className="font-mono text-[11px] mt-0.5">Email: anna@example.com</p>
+                <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5 font-mono text-[11px]">
+                  <span>KAS-20401 <span className="text-amber-500">(pending)</span></span>
+                  <span>KAS-20387 <span className="text-amber-500">(confirmed)</span></span>
+                  <span>KAS-20350 <span className="text-amber-500">(packed)</span></span>
+                  <span>KAS-20312 <span className="text-amber-500">(shipped)</span></span>
+                  <span>KAS-20180 <span className="text-amber-500">(delivered)</span></span>
+                </div>
+              </div>
+              <div className="border-t border-amber-200 pt-2">
+                <p className="font-medium">Profile login:</p>
+                <p className="font-mono text-[11px] mt-0.5">anna@example.com / password123</p>
+                <p className="font-mono text-[11px]">mikkel@example.com / password123 <span className="text-amber-500">(empty profile)</span></p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

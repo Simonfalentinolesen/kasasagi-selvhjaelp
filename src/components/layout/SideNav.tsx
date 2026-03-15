@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/cn'
 import {
-  Package, MapPin, RotateCcw, XCircle, AlertTriangle, PenLine, MessageCircle,
+  Package, MapPin, RotateCcw, XCircle, AlertTriangle, PenLine, MessageCircle, ArrowLeft,
 } from 'lucide-react'
 
 interface SideNavProps {
@@ -30,6 +30,14 @@ export function SideNav({ orderId, cancelEligible, changeEligible, className }: 
 
   return (
     <nav className={cn('flex flex-col gap-1', className)} aria-label="Order navigation">
+      <Link
+        href="/profile/orders"
+        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-fg-muted hover:text-fg-primary transition-colors mb-2"
+      >
+        <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+        My Orders
+      </Link>
+      <div className="border-t border-border mb-2" />
       {links
         .filter((l) => !l.hidden)
         .map((link) => {

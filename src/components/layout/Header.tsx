@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { HelpCircle, User, LogOut, ChevronDown } from 'lucide-react'
+import { HelpCircle, User, LogOut, ChevronDown, Package } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth-store'
 import { useState, useRef, useEffect } from 'react'
 
@@ -70,6 +70,14 @@ export function Header() {
                     >
                       <User className="h-4 w-4" strokeWidth={1.5} />
                       My Profile
+                    </Link>
+                    <Link
+                      href="/profile/orders"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-fg-secondary hover:bg-bg-surface-2 transition-colors"
+                    >
+                      <Package className="h-4 w-4" strokeWidth={1.5} />
+                      My Orders
                     </Link>
                     <button
                       onClick={() => {

@@ -12,7 +12,7 @@ import { Select } from '@/components/ui/Select'
 import { Input } from '@/components/ui/Input'
 import { RETURN_REASONS } from '@/lib/constants'
 import type { ReturnResponse } from '@/types/flow'
-import { CheckCircle, Download, ArrowRight } from 'lucide-react'
+import { CheckCircle, Download, ArrowRight, AlertTriangle } from 'lucide-react'
 
 const STEPS = ['Select items', 'Reason', 'Method', 'Review', 'Confirmation']
 
@@ -30,6 +30,7 @@ export function ReturnFlow() {
   const [preferRefund, setPreferRefund] = useState(true)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<ReturnResponse | null>(null)
+  const [showClaimPrompt, setShowClaimPrompt] = useState(false)
 
   if (!order) return null
 
@@ -117,34 +118,70 @@ export function ReturnFlow() {
       {/* Step 1: Reason */}
       {step === 1 && (
         <div className="space-y-4">
-          <p className="text-sm text-fg-secondary">Please tell us why you are returning.</p>
-          {Array.from(selectedItems).map((itemId) => {
-            const item = order.items.find((i) => i.id === itemId)
-            if (!item) return null
-            return (
-              <div key={itemId} className="rounded-md border border-border p-4 space-y-3">
-                <p className="text-sm font-medium text-fg-primary">{item.name}</p>
-                <Select
-                  label="Reason"
-                  options={RETURN_REASONS.map((r) => ({ value: r.value, label: r.label }))}
-                  placeholder="Select a reason"
-                  value={reasons[itemId] || ''}
-                  onChange={(e) => setReasons({ ...reasons, [itemId]: e.target.value })}
-                />
-                {reasons[itemId] === 'other' && (
-                  <Input
-                    label="Please describe"
-                    value={comments[itemId] || ''}
-                    onChange={(e) => setComments({ ...comments, [itemId]: e.target.value })}
-                    placeholder="Tell us more..."
-                  />
-                )}
+          {showClaimPrompt ? (
+            <div className="rounded-md border border-amber-300 bg-amber-50/50 p-5 space-y-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-medium text-fg-primary">This looks like a claim, not a return</h3>
+                  <p className="text-sm text-fg-secondary mt-1">
+                    If your item is defective or damaged, you should file a <strong>claim</strong> instead. This ensures faster handling and you won&apos;t need to pay for return shipping.
+                  </p>
+                </div>
               </div>
-            )
-          })}
-          <Button onClick={() => setStep(2)} disabled={!canProceedStep1} icon={<ArrowRight className="h-4 w-4" />} className="w-full">
-            Continue
-          </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => router.push(`/order/${params.orderId as string}/claim`)}
+                  icon={<ArrowRight className="h-4 w-4" />}
+                  className="flex-1"
+                >
+                  Start a claim
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowClaimPrompt(false)}
+                  className="flex-1"
+                >
+                  Continue with return
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-fg-secondary">Please tell us why you are returning.</p>
+              {Array.from(selectedItems).map((itemId) => {
+                const item = order.items.find((i) => i.id === itemId)
+                if (!item) return null
+                return (
+                  <div key={itemId} className="rounded-md border border-border p-4 space-y-3">
+                    <p className="text-sm font-medium text-fg-primary">{item.name}</p>
+                    <Select
+                      label="Reason"
+                      options={RETURN_REASONS.map((r) => ({ value: r.value, label: r.label }))}
+                      placeholder="Select a reason"
+                      value={reasons[itemId] || ''}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setReasons({ ...reasons, [itemId]: val })
+                        if (val === 'defective') setShowClaimPrompt(true)
+                      }}
+                    />
+                    {reasons[itemId] === 'other' && (
+                      <Input
+                        label="Please describe"
+                        value={comments[itemId] || ''}
+                        onChange={(e) => setComments({ ...comments, [itemId]: e.target.value })}
+                        placeholder="Tell us more..."
+                      />
+                    )}
+                  </div>
+                )
+              })}
+              <Button onClick={() => setStep(2)} disabled={!canProceedStep1} icon={<ArrowRight className="h-4 w-4" />} className="w-full">
+                Continue
+              </Button>
+            </>
+          )}
         </div>
       )}
 

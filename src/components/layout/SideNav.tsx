@@ -11,10 +11,11 @@ interface SideNavProps {
   orderId: string
   cancelEligible?: boolean
   changeEligible?: boolean
+  claimEligible?: boolean
   className?: string
 }
 
-export function SideNav({ orderId, cancelEligible, changeEligible, className }: SideNavProps) {
+export function SideNav({ orderId, cancelEligible, changeEligible, claimEligible, className }: SideNavProps) {
   const pathname = usePathname()
   const base = `/order/${orderId}`
 
@@ -23,7 +24,7 @@ export function SideNav({ orderId, cancelEligible, changeEligible, className }: 
     { href: `${base}/tracking`, label: 'Tracking', icon: MapPin },
     { href: `${base}/return`, label: 'Return', icon: RotateCcw },
     { href: `${base}/cancel`, label: 'Cancel', icon: XCircle, hidden: !cancelEligible },
-    { href: `${base}/claim`, label: 'Claim', icon: AlertTriangle },
+    { href: `${base}/claim`, label: 'Claim', icon: AlertTriangle, hidden: !claimEligible },
     { href: `${base}/change`, label: 'Change', icon: PenLine, hidden: !changeEligible },
     { href: `${base}/question`, label: 'Ask a question', icon: MessageCircle },
   ]

@@ -50,11 +50,13 @@ export function OrderActions({ order }: OrderActionsProps) {
           </Link>
         )}
 
-        <Link href={`/order/${order.id}/claim`}>
-          <Button variant="secondary" icon={<AlertTriangle className="h-4 w-4" />} className="w-full justify-start">
-            Report an issue
-          </Button>
-        </Link>
+        {isDelivered && (
+          <Link href={`/order/${order.id}/claim`}>
+            <Button variant="secondary" icon={<AlertTriangle className="h-4 w-4" />} className="w-full justify-start">
+              Report an issue
+            </Button>
+          </Link>
+        )}
 
         {canChangeAnything && (
           <Link href={`/order/${order.id}/change`}>

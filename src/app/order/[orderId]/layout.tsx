@@ -20,6 +20,7 @@ export default function OrderLayout({ children }: { children: React.ReactNode })
           orderId={orderId}
           cancelEligible={order?.cancelEligible}
           changeEligible={order?.contentChangeEligible || order?.addressChangeEligible}
+          claimEligible={order?.status === 'delivered'}
           className="hidden md:flex w-48 shrink-0"
         />
         <div className="flex-1 min-w-0 pb-20 md:pb-0">

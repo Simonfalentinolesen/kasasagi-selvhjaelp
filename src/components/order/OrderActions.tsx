@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import type { Order } from '@/types/order'
 import {
   MapPin, RotateCcw, XCircle, AlertTriangle, PenLine, MessageCircle, ExternalLink, Package,
-  ShieldCheck, BookOpen, Wrench,
+  ShieldCheck, BookOpen, Wrench, FileText,
 } from 'lucide-react'
 
 interface OrderActionsProps {
@@ -80,6 +80,10 @@ export function OrderActions({ order }: OrderActionsProps) {
             Ask a question
           </Button>
         </Link>
+
+        <Button variant="ghost" icon={<FileText className="h-4 w-4" />} className="w-full justify-start" onClick={() => window.alert('Invoice download would start here')}>
+          Download invoice
+        </Button>
 
         {order.trackingUrl && (
           <a href={order.trackingUrl} target="_blank" rel="noopener noreferrer">

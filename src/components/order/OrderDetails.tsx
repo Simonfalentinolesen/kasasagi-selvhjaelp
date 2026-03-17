@@ -34,6 +34,14 @@ interface OrderDetailsProps {
 export function OrderDetails({ order }: OrderDetailsProps) {
   const [copied, setCopied] = useState(false)
 
+  // Check if some items are in stock and others are delayed/backordered
+  const inStockItems = order.items.filter((i) => i.availability === 'in_stock')
+  const waitingItems = order.items.filter((i) => i.availability && i.availability !== 'in_stock')
+  const hasPartialDeliveryOption =
+    inStockItems.length > 0 &&
+    waitingItems.length > 0 &&
+    !['shipped', 'delivered', 'cancelled', 'returned'].includes(order.status)
+
   const copyOrderNumber = () => {
     navigator.clipboard.writeText(order.orderNumber)
     setCopied(true)
@@ -188,6 +196,55 @@ export function OrderDetails({ order }: OrderDetailsProps) {
         </div>
       )}
 
+      {/* Actions — moved to top for easy access */}
+      <OrderActions order={order} />
+
+      {/* Partial delivery — standalone banner when items have mixed availability */}
+      {!order.delayInfo?.isDelayed && hasPartialDeliveryOption && (
+        <div className="rounded-md border border-amber-300 bg-amber-50/50 p-4">
+          <div className="flex items-start gap-3">
+            <Truck className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" strokeWidth={1.5} />
+            <div className="space-y-2">
+              <div>
+                <p className="text-sm font-semibold text-fg-primary">
+                  Split delivery available
+                </p>
+                <p className="text-sm text-fg-secondary mt-1">
+                  Some items in your order are ready to ship now, while others are still being restocked. You can choose to receive available items first.
+                </p>
+              </div>
+              <div className="space-y-1 text-xs">
+                <div>
+                  <span className="font-medium text-success">Ready now:</span>{' '}
+                  <span className="text-fg-secondary">
+                    {order.items.filter((i) => i.availability === 'in_stock').map((i) => i.name).join(', ')}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium text-amber-600">Waiting:</span>{' '}
+                  <span className="text-fg-secondary">
+                    {order.items.filter((i) => i.availability !== 'in_stock').map((i) => {
+                      const suffix = i.estimatedRestockDate
+                        ? ` (est. ${new Date(i.estimatedRestockDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })})`
+                        : ''
+                      return i.name + suffix
+                    }).join(', ')}
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-1">
+                <Button size="sm" variant="primary">
+                  Ship available items now
+                </Button>
+                <Button size="sm" variant="ghost">
+                  Wait for full order
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Status timeline */}
       <div className="rounded-md border border-border bg-bg-surface p-5">
         <h2 className="font-display text-lg text-fg-primary mb-4">Order Status</h2>
@@ -286,9 +343,6 @@ export function OrderDetails({ order }: OrderDetailsProps) {
           Status: {order.paymentStatus.replace('_', ' ')}
         </p>
       </div>
-
-      {/* Actions */}
-      <OrderActions order={order} />
     </div>
   )
 }

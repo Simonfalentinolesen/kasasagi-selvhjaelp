@@ -85,6 +85,7 @@ export default function HomePage() {
                 <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5 font-mono text-[11px]">
                   <span>KAS-20401 <span className="text-amber-500">(pending)</span></span>
                   <span>KAS-20387 <span className="text-amber-500">(confirmed)</span></span>
+                  <span>KAS-20295 <span className="text-amber-500">(delayed + split delivery)</span></span>
                   <span>KAS-20350 <span className="text-amber-500">(packed)</span></span>
                   <span>KAS-20312 <span className="text-amber-500">(shipped)</span></span>
                   <span>KAS-20180 <span className="text-amber-500">(delivered)</span></span>

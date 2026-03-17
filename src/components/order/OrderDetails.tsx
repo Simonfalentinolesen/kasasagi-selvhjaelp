@@ -6,7 +6,7 @@ import { StatusTimeline } from './StatusTimeline'
 import { OrderActions } from './OrderActions'
 import { ORDER_STATUS_LABELS } from '@/lib/constants'
 import type { Order, OrderStatus, ItemAvailability } from '@/types/order'
-import { CalendarDays, Copy, Check, AlertTriangle, Clock, PackageX, Truck } from 'lucide-react'
+import { CalendarDays, Copy, Check, AlertTriangle, Clock, PackageX, Truck, Package } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 
@@ -41,6 +41,24 @@ export function OrderDetails({ order }: OrderDetailsProps) {
     inStockItems.length > 0 &&
     waitingItems.length > 0 &&
     !['shipped', 'delivered', 'cancelled', 'returned'].includes(order.status)
+
+  // Per-item delivery date: in_stock items use order.estimatedDelivery, others use estimatedRestockDate
+  const getItemDeliveryDate = (item: Order['items'][number]) => {
+    if (item.availability === 'in_stock' || !item.availability) {
+      return order.estimatedDelivery ? new Date(order.estimatedDelivery) : null
+    }
+    return item.estimatedRestockDate ? new Date(item.estimatedRestockDate) : null
+  }
+
+  // Latest delivery date across all items (the date the full order ships)
+  const latestDeliveryDate = order.items.reduce<Date | null>((latest, item) => {
+    const d = getItemDeliveryDate(item)
+    if (!d) return latest
+    return !latest || d > latest ? d : latest
+  }, null)
+
+  const formatDate = (d: Date) =>
+    d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
 
   const copyOrderNumber = () => {
     navigator.clipboard.writeText(order.orderNumber)
@@ -199,52 +217,6 @@ export function OrderDetails({ order }: OrderDetailsProps) {
       {/* Actions — moved to top for easy access */}
       <OrderActions order={order} />
 
-      {/* Partial delivery — standalone banner when items have mixed availability */}
-      {!order.delayInfo?.isDelayed && hasPartialDeliveryOption && (
-        <div className="rounded-md border border-amber-300 bg-amber-50/50 p-4">
-          <div className="flex items-start gap-3">
-            <Truck className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" strokeWidth={1.5} />
-            <div className="space-y-2">
-              <div>
-                <p className="text-sm font-semibold text-fg-primary">
-                  Split delivery available
-                </p>
-                <p className="text-sm text-fg-secondary mt-1">
-                  Some items in your order are ready to ship now, while others are still being restocked. You can choose to receive available items first.
-                </p>
-              </div>
-              <div className="space-y-1 text-xs">
-                <div>
-                  <span className="font-medium text-success">Ready now:</span>{' '}
-                  <span className="text-fg-secondary">
-                    {order.items.filter((i) => i.availability === 'in_stock').map((i) => i.name).join(', ')}
-                  </span>
-                </div>
-                <div>
-                  <span className="font-medium text-amber-600">Waiting:</span>{' '}
-                  <span className="text-fg-secondary">
-                    {order.items.filter((i) => i.availability !== 'in_stock').map((i) => {
-                      const suffix = i.estimatedRestockDate
-                        ? ` (est. ${new Date(i.estimatedRestockDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })})`
-                        : ''
-                      return i.name + suffix
-                    }).join(', ')}
-                  </span>
-                </div>
-              </div>
-              <div className="flex gap-2 mt-1">
-                <Button size="sm" variant="primary">
-                  Ship available items now
-                </Button>
-                <Button size="sm" variant="ghost">
-                  Wait for full order
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Status timeline */}
       <div className="rounded-md border border-border bg-bg-surface p-5">
         <h2 className="font-display text-lg text-fg-primary mb-4">Order Status</h2>
@@ -256,8 +228,36 @@ export function OrderDetails({ order }: OrderDetailsProps) {
         <h2 className="font-display text-lg text-fg-primary mb-4">
           Items ({order.items.length})
         </h2>
+
+        {/* Ships-together summary when items have different dates */}
+        {hasPartialDeliveryOption && latestDeliveryDate && !order.deliveredAt && order.status !== 'cancelled' && (
+          <div className="rounded-md border border-amber-200 bg-amber-50/40 p-3 mb-4">
+            <div className="flex items-start gap-2.5">
+              <Package className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" strokeWidth={1.5} />
+              <div>
+                <p className="text-sm font-medium text-fg-primary">
+                  Ships together on <span className="text-amber-700">{formatDate(latestDeliveryDate)}</span>
+                </p>
+                <p className="text-xs text-fg-secondary mt-0.5">
+                  We wait for all items to be ready and ship your order in one package. Want some items sooner?
+                </p>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  className="mt-2"
+                >
+                  Split delivery — ship ready items now
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="divide-y divide-border">
-          {order.items.map((item) => (
+          {order.items.map((item) => {
+            const itemDate = getItemDeliveryDate(item)
+            const isWaiting = item.availability && item.availability !== 'in_stock'
+            return (
             <div key={item.id} className="flex gap-4 py-3 first:pt-0 last:pb-0">
               <div className="h-16 w-16 shrink-0 rounded-md border border-border overflow-hidden bg-bg-surface-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -273,23 +273,31 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                 {item.variant && (
                   <p className="text-xs text-fg-muted">{item.variant}</p>
                 )}
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex flex-wrap items-center gap-2 mt-1">
                   <p className="text-xs text-fg-secondary">Qty: {item.quantity}</p>
-                  {item.availability && item.availability !== 'in_stock' && (
-                    <Badge variant={availabilityConfig[item.availability].variant} className="text-[10px] px-1.5 py-0">
-                      {availabilityConfig[item.availability].label}
-                      {item.estimatedRestockDate && (
-                        <> — est. {new Date(item.estimatedRestockDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</>
-                      )}
+                  {isWaiting && (
+                    <Badge variant={availabilityConfig[item.availability!].variant} className="text-[10px] px-1.5 py-0">
+                      {availabilityConfig[item.availability!].label}
                     </Badge>
                   )}
                 </div>
+                {/* Per-item delivery date */}
+                {itemDate && !order.deliveredAt && order.status !== 'cancelled' && (
+                  <p className={`text-xs mt-1 ${isWaiting ? 'text-amber-600' : 'text-fg-muted'}`}>
+                    {isWaiting ? (
+                      <>Expected ready: {formatDate(itemDate)}</>
+                    ) : (
+                      <>Ready to ship</>
+                    )}
+                  </p>
+                )}
               </div>
               <p className="text-sm font-medium text-fg-primary whitespace-nowrap">
                 {(item.unitPrice * item.quantity).toLocaleString('da-DK')} {item.currency}
               </p>
             </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Totals */}

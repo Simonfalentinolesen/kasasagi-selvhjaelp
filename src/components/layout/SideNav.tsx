@@ -24,7 +24,7 @@ export function SideNav({ orderId, cancelEligible, changeEligible, claimEligible
     { href: `${base}/tracking`, label: 'Tracking', icon: MapPin },
     { href: `${base}/return`, label: 'Return', icon: RotateCcw },
     { href: `${base}/cancel`, label: 'Cancel', icon: XCircle, hidden: !cancelEligible },
-    { href: `${base}/claim`, label: 'Claim', icon: AlertTriangle, hidden: !claimEligible },
+    { href: `${base}/claim`, label: 'Claim', icon: AlertTriangle },
     { href: `${base}/change`, label: 'Change', icon: PenLine, hidden: !changeEligible },
     { href: `${base}/question`, label: 'Ask a question', icon: MessageCircle },
   ]

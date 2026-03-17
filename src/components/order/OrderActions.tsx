@@ -50,7 +50,7 @@ export function OrderActions({ order }: OrderActionsProps) {
           </Link>
         )}
 
-        {isDelivered && (
+        {!isCancelled && (
           <Link href={`/order/${order.id}/claim`}>
             <Button variant="secondary" icon={<AlertTriangle className="h-4 w-4" />} className="w-full justify-start">
               Report an issue

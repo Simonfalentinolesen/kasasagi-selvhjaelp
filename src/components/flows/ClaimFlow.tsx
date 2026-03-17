@@ -11,7 +11,7 @@ import { Select } from '@/components/ui/Select'
 import { FileUpload } from '@/components/ui/FileUpload'
 import { CLAIM_TYPES } from '@/lib/constants'
 import type { ClaimResponse } from '@/types/flow'
-import { CheckCircle, ArrowRight } from 'lucide-react'
+import { CheckCircle, ArrowRight, Clock } from 'lucide-react'
 
 const STEPS = ['Select item', 'Issue type', 'Evidence', 'Description', 'Resolution', 'Confirmation']
 
@@ -67,11 +67,38 @@ export function ClaimFlow() {
       onBack={step > 0 && step < 5 ? () => setStep(step - 1) : undefined}
     >
       {/* Step 0: Select item */}
-      {step === 0 && (
+      {step === 0 && (() => {
+        // Items are claimable if the order is shipped/delivered, OR if the individual item is in_stock
+        // (meaning it was part of a partial delivery). Delayed/backordered items are not yet received.
+        const isReceivedStatus = order.status === 'delivered' || order.status === 'shipped'
+        const isItemClaimable = (item: typeof order.items[number]) => {
+          if (isReceivedStatus) return true
+          // For orders still being processed, only in-stock items from a partial delivery could have been received
+          // But if the order hasn't shipped at all, nothing is claimable
+          if (order.delayInfo?.partialDeliveryAvailable && order.delayInfo.availableItemIds?.includes(item.id)) {
+            return false // partial delivery option exists but hasn't been acted on yet — not shipped
+          }
+          return false
+        }
+        const claimableItems = order.items.filter(isItemClaimable)
+        const nonClaimableItems = order.items.filter((item) => !isItemClaimable(item))
+
+        return (
         <div className="space-y-4">
           <p className="text-sm text-fg-secondary">Which item has an issue?</p>
+          {claimableItems.length === 0 && (
+            <div className="rounded-md border border-amber-200 bg-amber-50/40 p-4 flex items-start gap-3">
+              <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" strokeWidth={1.5} />
+              <div>
+                <p className="text-sm font-medium text-fg-primary">No items eligible for a claim yet</p>
+                <p className="text-xs text-fg-secondary mt-1">
+                  You can only report an issue with items that have been shipped or delivered. Your order is still being processed.
+                </p>
+              </div>
+            </div>
+          )}
           <div className="space-y-2">
-            {order.items.map((item) => (
+            {claimableItems.map((item) => (
               <label
                 key={item.id}
                 className={`flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-colors ${
@@ -93,12 +120,29 @@ export function ClaimFlow() {
                 <span className="text-sm text-fg-primary">{item.name}</span>
               </label>
             ))}
+            {nonClaimableItems.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 rounded-md border border-border p-3 opacity-50"
+              >
+                <input type="radio" disabled className="accent-[var(--color-accent)]" />
+                <div className="h-10 w-10 shrink-0 rounded border border-border overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                </div>
+                <div>
+                  <span className="text-sm text-fg-primary">{item.name}</span>
+                  <p className="text-xs text-fg-muted">Not yet shipped — cannot claim</p>
+                </div>
+              </div>
+            ))}
           </div>
           <Button onClick={() => setStep(1)} disabled={!selectedItemId} icon={<ArrowRight className="h-4 w-4" />} className="w-full">
             Continue
           </Button>
         </div>
-      )}
+        )
+      })()}
 
       {/* Step 1: Issue type */}
       {step === 1 && (

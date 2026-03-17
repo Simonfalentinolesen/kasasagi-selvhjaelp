@@ -6,9 +6,12 @@ import { StatusTimeline } from './StatusTimeline'
 import { OrderActions } from './OrderActions'
 import { ORDER_STATUS_LABELS } from '@/lib/constants'
 import type { Order, OrderStatus, ItemAvailability } from '@/types/order'
-import { CalendarDays, Copy, Check, AlertTriangle, Clock, PackageX, Truck, Package } from 'lucide-react'
+import { CalendarDays, Copy, Check, AlertTriangle, Clock, PackageX, Truck, Package, Trash2, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
+import { api } from '@/lib/api'
+import { useOrderStore } from '@/stores/order-store'
+import { useUIStore } from '@/stores/ui-store'
 
 const statusVariant: Record<OrderStatus, 'neutral' | 'info' | 'success' | 'warning' | 'error'> = {
   pending: 'info',
@@ -33,6 +36,27 @@ interface OrderDetailsProps {
 
 export function OrderDetails({ order }: OrderDetailsProps) {
   const [copied, setCopied] = useState(false)
+  const [removingItemId, setRemovingItemId] = useState<string | null>(null)
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null)
+  const setCurrentOrder = useOrderStore((s) => s.setCurrentOrder)
+  const addToast = useUIStore((s) => s.addToast)
+
+  const canRemoveItems =
+    ['pending', 'confirmed', 'packed'].includes(order.status) && order.items.length > 1
+
+  const handleRemoveItem = async (itemId: string) => {
+    setRemovingItemId(itemId)
+    try {
+      const updated = await api.removeItem(order.id, itemId)
+      setCurrentOrder(updated)
+      addToast({ type: 'success', message: 'Item removed from order.' })
+    } catch {
+      addToast({ type: 'error', message: 'Could not remove item. Please try again.' })
+    } finally {
+      setRemovingItemId(null)
+      setConfirmRemoveId(null)
+    }
+  }
 
   // Check if some items are in stock and others are delayed/backordered
   const inStockItems = order.items.filter((i) => i.availability === 'in_stock')
@@ -292,9 +316,43 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                   </p>
                 )}
               </div>
-              <p className="text-sm font-medium text-fg-primary whitespace-nowrap">
-                {(item.unitPrice * item.quantity).toLocaleString('da-DK')} {item.currency}
-              </p>
+              <div className="flex flex-col items-end gap-1 shrink-0">
+                <p className="text-sm font-medium text-fg-primary whitespace-nowrap">
+                  {(item.unitPrice * item.quantity).toLocaleString('da-DK')} {item.currency}
+                </p>
+                {canRemoveItems && (
+                  confirmRemoveId === item.id ? (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleRemoveItem(item.id)}
+                        disabled={removingItemId === item.id}
+                        className="text-xs text-error hover:text-red-700 font-medium disabled:opacity-50 flex items-center gap-1"
+                      >
+                        {removingItemId === item.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          'Remove'
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setConfirmRemoveId(null)}
+                        className="text-xs text-fg-muted hover:text-fg-primary"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmRemoveId(item.id)}
+                      className="text-xs text-fg-muted hover:text-error transition-colors flex items-center gap-1"
+                      title="Remove item"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span className="hidden sm:inline">Remove</span>
+                    </button>
+                  )
+                )}
+              </div>
             </div>
             )
           })}

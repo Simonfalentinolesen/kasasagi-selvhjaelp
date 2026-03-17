@@ -79,6 +79,16 @@ export const api = {
     })
   },
 
+  async removeItem(orderId: string, itemId: string): Promise<Order> {
+    if (USE_MOCKS) {
+      const mock = await getMockApi()
+      return mock.removeItem(orderId, itemId)
+    }
+    return fetchApi(`/api/orders/${orderId}/items/${itemId}`, {
+      method: 'DELETE',
+    })
+  },
+
   async submitCancel(orderId: string, data: CancelRequest): Promise<CancelResponse> {
     if (USE_MOCKS) {
       const mock = await getMockApi()

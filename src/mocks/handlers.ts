@@ -84,6 +84,32 @@ export const mockApi = {
     }
   },
 
+  async removeItem(orderId: string, itemId: string): Promise<Order> {
+    await simulateDelay(300, 800)
+    const order = mockOrders.find((o) => o.id === orderId)
+    if (!order) throw { status: 404, message: 'Order not found' }
+
+    const preShipStatuses = ['pending', 'confirmed', 'packed']
+    if (!preShipStatuses.includes(order.status)) {
+      throw { status: 400, message: 'Cannot remove items from shipped or delivered orders' }
+    }
+
+    if (order.items.length <= 1) {
+      throw { status: 400, message: 'Cannot remove the last item — cancel the order instead' }
+    }
+
+    const idx = order.items.findIndex((i) => i.id === itemId)
+    if (idx === -1) throw { status: 404, message: 'Item not found' }
+
+    const removed = order.items.splice(idx, 1)[0]
+    // Recalculate totals
+    const subtotal = order.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)
+    order.totals.subtotal = subtotal
+    order.totals.total = subtotal + order.totals.shipping + order.totals.discount
+
+    return { ...order }
+  },
+
   async submitCancel(_orderId: string, _data: CancelRequest): Promise<CancelResponse> {
     await simulateDelay(500, 1000)
     return {
